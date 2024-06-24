@@ -1,0 +1,7 @@
+JINA_KEY = "Bearer jina_d4016c178ff54245bb03779bed7de034Lc4V-u_ff22TiVY384eKPIisNl4h"
+
+LOAD_TIME = 10
+
+SCROLLS = 100
+
+HEADLESS = True

@@ -1,0 +1,197 @@
+{
+    "headers": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "DNT": "1"
+    },
+    "goodgoodgood": {
+        "url": "https://www.goodgoodgood.co",
+        "green_flag": ["articles"],
+        "red_flag": [""],
+        "min_article_lenght": 3,
+        "cfp": true,
+        "no_prefix": false,
+        "html_class": false,
+        "numeric_pattern": false
+    },
+    "positive_news": {
+        "url": "https://www.positive.news",
+        "green_flag": ["environment", "society", "lifestyle", "science", "economics", "perspective", "opinion", "article"],
+        "red_flag": ["about", "collections"],
+        "min_article_lenght": 10,
+        "cfp": true,
+        "no_prefix": false,
+        "html_class": false,
+        "numeric_pattern": false
+    },
+    "reason_to_be_cheerful": {
+        "url": "https://reasonstobecheerful.world",
+        "green_flag": [],
+        "red_flag": ["about", "collections", "archives", "category", "membership", "membership-faq", "articles", "contact", "wp-content", "privacy-policy", "supporters-and-affiliates", "editorial-and-ethics-policy", "pitching-guidelines", "events-submission"],
+        "min_article_lenght": 15,
+        "cfp": false,
+        "no_prefix": true,
+        "html_class": false,
+        "numeric_pattern": false
+    },
+    "yesmagazine": {
+        "url": "https://www.yesmagazine.org",
+        "green_flag": [],
+        "red_flag": [],
+        "min_article_lenght": 3,
+        "cfp": false,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class":"div.inside-article.opinion", 
+        "numeric_pattern": "/(\\d{4})/(\\d{2})/(\\d{2})/"
+    },
+    "goodnewsnetwork": {
+        "url": "https://www.goodnewsnetwork.org",
+        "green_flag": [],
+        "red_flag": ["lostpassword", "our-privacy-policy", "privacy-tools", "login", "more", "contribute","shop", "cart","about", "collections", "archives", "category", "membership", "membership-faq", "articles", "contact", "wp-content", "privacy-policy", "supporters-and-affiliates", "editorial-and-ethics-policy", "pitching-guidelines", "events-submission"],
+        "min_article_lenght": 10,
+        "cfp": false,
+        "no_prefix": true,
+        "html_class": false,
+        "numeric_pattern": false
+    },
+    "goodblacknews": {
+        "url": "https://www.goodblacknews.org/",
+        "green_flag": [],
+        "red_flag": ["our-privacy-policy", "privacy-tools", "login", "more", "contribute","shop", "cart","about", "collections", "archives", "category", "membership", "membership-faq", "articles", "contact", "wp-content", "privacy-policy", "supporters-and-affiliates", "editorial-and-ethics-policy", "pitching-guidelines", "events-submission"],
+        "min_article_lenght": 10,
+        "cfp": false,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": "div.post-content",
+        "numeric_pattern": "/(\\d{4})/(\\d{2})/(\\d{2})/"
+    },
+    "dailygood": {
+        "url": "https://www.dailygood.org",
+        "green_flag": ["story"],
+        "red_flag": ["about", "collections"],
+        "min_article_lenght": 1,
+        "cfp": true,
+        "no_prefix": false,
+        "html_class": false,
+        "numeric_pattern": false
+    },
+    "sunny_skyz": {
+        "url": "https://www.sunnyskyz.com/good-news",
+        "green_flag": ["good-news", "blog", "happy-videos"],
+        "red_flag": [],
+        "min_article_lenght": 10,
+        "cfp": true,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": "div.storytext.onlynews",
+        "numeric_pattern": "/(\\d{4})/"
+    },
+    "thehappybroadcast": {
+        "url": "https://www.thehappybroadcast.com",
+        "green_flag": ["news"],
+        "red_flag": [],
+        "min_article_lenght": 10,
+        "cfp": true,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": "div.storytext.onlynews",
+        "numeric_pattern": false,
+        "dynamic": true
+    },
+    "janegoodall": {
+        "url": "https://news.janegoodall.org/",
+        "green_flag": [],
+        "red_flag": [],
+        "min_article_lenght": 10,
+        "cfp": false,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": "div.post-content.description",
+        "numeric_pattern": "/(\\d{4})/(\\d{2})/(\\d{2})/",
+        "dynamic": false
+    },
+    "optimistdaily": {
+        "url": "https://www.optimistdaily.com",
+        "green_flag": [],
+        "red_flag": [],
+        "min_article_lenght": 10,
+        "cfp": false,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": false,
+        "numeric_pattern": "/(\\d{4})/(\\d{2})/",
+        "dynamic": false
+    },
+    "thehappynewspaper": {
+        "url": "https://thehappynewspaper.com/",
+        "green_flag": [],
+        "red_flag": [],
+        "min_article_lenght": 10,
+        "cfp": false,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": false,
+        "numeric_pattern": false,
+        "dynamic": false
+    },
+    "huffpost": {
+        "url": "https://www.huffpost.com",
+        "green_flag": ["entry"],
+        "red_flag": [],
+        "min_article_lenght": 10,
+        "cfp": true,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": false,
+        "numeric_pattern": false,
+        "dynamic": false
+    },
+    "theweek": {
+        "url": "https://theweek.com/",
+        "green_flag": ["edition", "culture-life", "cartoons"],
+        "red_flag": [],
+        "min_article_lenght": 10,
+        "cfp": true,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": false,
+        "numeric_pattern": false,
+        "dynamic": false
+    },
+    "usatoday": {
+        "url": "https://eu.usatoday.com/humankind/",
+        "green_flag": ["story/life/humankind"],
+        "red_flag": [],
+        "min_article_lenght": 10,
+        "cfp": false,
+        "no_prefix": false,
+        "html_class": false,
+        "alternative_html_class": false,
+        "numeric_pattern": "/(\\d{4})/(\\d{2})/(\\d{2})/",
+        "dynamic": false,
+        "fixed_path": true
+    },
+    "today": {
+        "url": "https://www.today.com/",
+        "green_flag": ["parents", "pets", "health", "recipes"],
+        "red_flag": ["about", "information"],
+        "min_article_lenght": 10,
+        "cfp": false,
+        "no_prefix": false,
+        "html_class": "div.article-body__content",
+        "alternative_html_class": false,
+        "numeric_pattern": false,
+        "dynamic": false,
+        "fixed_path": false
+    }
+
+
+    
+
+
+}   
