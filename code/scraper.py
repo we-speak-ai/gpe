@@ -7,6 +7,13 @@ from urllib.parse import urljoin, urlparse
 from collections import deque
 import MACHINE_CONFIG
 import newspaper
+import uuid
+import requests
+from bs4 import BeautifulSoup
+import scraper_prompts
+import MACHINE_CONFIG
+import json
+from groq import Groq
 import json
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -16,7 +23,7 @@ import time
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 
-CONFIG_PATH = "site-config.json"
+CONFIG_PATH = "mbh-config.json"
 
 def is_iterable(variable):
     try:
@@ -175,6 +182,10 @@ def get_articles(config: dict, max_url = 1000, output_path=None, verbal=False):
 
                             good_link.append(len(segments)>1 and segments[0] in green_flag and not(segments[0] in red_flag) and len(segments[-1])>=min_article_lenght)
 
+                        if len(red_flag) !=0:
+                            found_flag = any([ bool(flag in segments) for flag in red_flag ])
+                            good_link.append(not found_flag)
+
                         if html_class:
                             link_response = requests.get(full_url)
                             html_content = link_response.text
@@ -219,7 +230,7 @@ def get_articles(config: dict, max_url = 1000, output_path=None, verbal=False):
     
     return articles, visited_urls
    
-def jina_reader(url, save=False, output=None):
+def jina_reader(url, uid, save=False, output=None):
     """
         The response from JINA has the following structure:
         {
@@ -238,23 +249,24 @@ def jina_reader(url, save=False, output=None):
     "Authorization": MACHINE_CONFIG.JINA_KEY,
     "Accept": "application/json"
     }
-
+    print("\tRead with Jina >> ", end="")
     response = requests.get(jina+url, headers=headers)
     response_text = response.text
     # Checking the status of the request
     if response.status_code == 200:
         response_body = response.content.decode('utf-8')
         response_body = json.loads(response_body)["data"]
-        print(response_body)
         title = response_body["title"].strip().replace(" ", "_")
         text = response_body["content"]
     else:
         print(f'Failed to fetch data. Status code: {response.status_code}')
     if save:
         if  output is None: 
-            output=str(title+".md")
-        with open(output, "w", encoding="utf-8") as file:
+            output=str(str(uid)+".md")
+        with open(os.path.join(output, str(uid)+".md"), "w", encoding="utf-8") as file:
             file.write(text)
+        print("Saved >> ", end="")
+    print("Finished!")
     return response_body
     
 def find_images_in_md_text(text):
@@ -272,30 +284,150 @@ def find_images_on_page(url):
     article.parse()
     return article.images
 
-def construct_article(url, save=False, output=None):
-    data = jina_reader(url=url, save=save, output=output)
+def extrat_metadata(url, client:Groq=None, verbal=False):
+    """
+    {
+    "author":  ["author name"], 
+    "tags": [ "list of tags" ],
+    "category": [ "list of categories" ]
+    }
+    """
+    print(f"\tExtrat metadata >> ", end="")
+    response = requests.get(url)
+    html_content = response.text
+    soup = BeautifulSoup(html_content, 'html.parser')
+    for script_or_style in soup(['script', 'style']):
+        script_or_style.decompose()
+
+    all_text = soup.get_text(separator=' ', strip=True)
+
+    link_texts = "\n".join([link.get_text(strip=True) for link in soup.find_all('a') ])
+
+    final_content = f"The page text: \n\n {all_text}\n\nAll link text in page: \n\n {link_texts}"
+    for i in range(MACHINE_CONFIG.TRY_OUT):
+        try: 
+            if client is None:
+                client = Groq(
+                    api_key=MACHINE_CONFIG.GROQ_KEY,
+                )
+            chat_completion = client.chat.completions.create(
+                response_format = {"type": "json_object"},
+                messages=[
+                    {
+                        "role": "system",
+                        "content": scraper_prompts.SYS_METADATA,
+                    },
+                            {
+                        "role": "user",
+                        "content": final_content,
+                    }
+                ],
+                model=MACHINE_CONFIG.MODELL_META
+            )
+            respond = chat_completion.choices[0].message.content
+            if verbal: print(f"\n\tThe respond: \n{respond}")
+            loaded_data = json.loads(respond)
+            print("Finished")
+            return loaded_data
+        except Exception as e:
+            print(f"\n\tThere was an error generating the metadata: {e} \n\tIteration [{i+1} of {MACHINE_CONFIG.TRY_OUT}]")
+
+def create_summary(text, client:Groq=None, verbal=False):
+    print("\tCreate summary >> ", end="")
+    summary = None
+    headline = None
+    if client is None:
+        client = Groq(
+            api_key=MACHINE_CONFIG.GROQ_KEY,
+        )
+    for i in range(MACHINE_CONFIG.TRY_OUT):
+        try: 
+            if summary is None:
+                summary = client.chat.completions.create(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": scraper_prompts.SYS_SUMMARY,
+                        },
+                                {
+                            "role": "user",
+                            "content": text,
+                        }
+                    ],
+                    model=MACHINE_CONFIG.MODELL_SUMMARY,
+                ).choices[0].message.content
+            if headline is None:
+                headline = client.chat.completions.create(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": scraper_prompts.SYS_HEADLINE,
+                        },
+                                {
+                            "role": "user",
+                            "content": text,
+                        }
+                    ],
+                    model=MACHINE_CONFIG.MODELL_HEADLINE,
+                ).choices[0].message.content
+            if verbal: print(f"\n\tHeadLine: {headline}\n\tSummary: {summary}")
+            print("Finished!")
+            if summary != None and headline != None:
+                return summary, headline
+        except Exception as e:
+            print(f"\tThere was an error generating the Summary: {e} \n\tIteration [{i+1} of {MACHINE_CONFIG.TRY_OUT}]")
+            return None, None
+
+def construct_article(url, uid, client:Groq=None, save=False, output=None):
+    print(f"Construct: {url}")
+    #----------------------------------------------------------------
+    # Formated text
+    data = jina_reader(url=url, uid=uid, save=save, output=output)
+    #----------------------------------------------------------------
+    # Images
     images = find_images_in_md_text(data["content"])
     if len(images) == 0:
         images = find_images_on_page(url)
-    
+    #----------------------------------------------------------------
+    # Metadata and sentiment
+    sentiment = None
+    metadata = extrat_metadata(url, client=client, verbal=False)
+    #----------------------------------------------------------------
+    # Summary and keywords
+    summary, one_liner = create_summary(data["content"], client, False)
+    keywords = None
+
     article = {
+        "uid": str(uid),
         "url": url,
         "full_text": data["content"],
+        "summary": summary,
+        "one_liner": one_liner,
+        "sentiment": sentiment,
+        "keywords": keywords,
         "images": images,
         "title": data["title"],
-        "time_stamp": data["publishedTime"]
+        "time_stamp": data["publishedTime"],
+        "authors": metadata["author"],
+        "tags": metadata["tags"],
+        "category": metadata["category"]
     }
     if save:
-        if  output is None: 
-            output=str(data["title"].strip().replace(" ", "_")+".json")
-        with open(output, "w", encoding="utf-8") as file:
-            json.dump(article, file, ensure_ascii=False, indent=4)
+        try:
+            if  output is None: 
+                output=str(str(uid)+".json")
+            with open(os.path.join(output, str(str(uid)+".json")), "w", encoding="utf-8") as file:
+                json.dump(article, file, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"There was an Error constructing the JSON output writing it to txt.")
+            with open(os.path.join(output, str(str(uid)+".json")), "w", encoding="utf-8") as file:
+                for key, value in article.items():
+                    file.write(f'{key}: {value}\n')
     return article
 
 def site_selector(config_path):
-
     print("-"*60, "\nSCRAPER v0.1\n" "The following sites are available:")
-    with open(CONFIG_PATH, "r", encoding="utf-8") as config_file:
+    with open(config_path, "r", encoding="utf-8") as config_file:
         config = json.load(config_file)
     site_index_array = []
     for index, key in enumerate(config, start=0):
@@ -317,5 +449,68 @@ def site_selector(config_path):
     articles, visited = get_articles(site_config, count, output, verbal=False)
     print(f"\n Viseted: [{len(visited)}]", f"\n Extracted: [{len(articles)}]")
 
+
+class Scraper:
+    def __init__(self, config_path, global_verbal=False):
+        self.config_path = config_path
+        self.global_verbal = global_verbal
+        with open(config_path, "r", encoding="utf-8") as config_file:
+            self.config = json.load(config_file)
+        
+        self.client = Groq(
+                api_key=MACHINE_CONFIG.GROQ_KEY,
+            )
+
+    def site_selector(self):
+        self.site_index_array = []
+        for index, key in enumerate(self.config, start=0):
+            if index==0: continue
+            print(f"\t - [{index}] >> {self.config[key]['url']}")
+            self.site_index_array.append(key)
+        site_key = self.site_index_array[int(input(f"Select a site [1-{len(self.site_index_array)}]: "))-1]
+        site_config = self.config[site_key]
+        site_config["headers"] = self.config["headers"]
+        print("-"*60, f"\nYou choose to scrape: {site_config['url']} >>")
+        for key in site_config:
+            print(f"\t[{key}] : {site_config[key]}")
+        count = int(input("\nGive me the maximum amount of pages that you want to get: "))
+        return {"site_key": site_key, "count": count}
+    
+    def get_site_articles(self, key, count, path="data", verbal=False):
+        if verbal: print(f"The Files wil be saved to >> {output} \n\nExtracting:>>\n")
+        output = os.path.join(path, (key+".txt"))
+        try: 
+            site_config = self.config[key]
+            site_config["headers"] = self.config["headers"]
+
+            articles, visited = get_articles(site_config, count, output, verbal=self.global_verbal)
+            if verbal: print(f"\n Viseted: [{len(visited)}]", f"\n Extracted: [{len(articles)}]")
+            return articles
+        except Exception as e:
+            print(e)
+            return None
+
+    def collect_site(self, urls, output):
+        os.makedirs(output, exist_ok=True)
+        for url in urls:
+            url_uid1 = uuid.uuid1()
+            construct_article(url, url_uid1, self.client, True, output)
+
+    def collect_all(self, count, root="scraper_output"):
+        root = os.path.join(root, "scraper_output")
+        for key in self.config:
+            if key=="headers": continue
+            output_dir = os.path.join(root, key)
+            os.makedirs(output_dir, exist_ok=True)
+            print("-"*60, f"\nCollecting {key}:")
+            urls = self.get_site_articles(key, count, output_dir)
+            self.collect_site(urls, output_dir)
+    
 if __name__ == "__main__":
-    site_selector(CONFIG_PATH)
+    scraper = Scraper(CONFIG_PATH)
+    urls_path = r"C:\Users\andra\OneDrive\Dokumentumok\Munka\WeSpeakAi\GoodPeople\data\ARTC_monitorblog.txt"
+    output = r"C:\Users\andra\OneDrive\Dokumentumok\Munka\WeSpeakAi\GoodPeople\data\mbh"
+    with open(urls_path, "r") as file:
+        urls = file.readlines()
+
+    scraper.collect_site(urls=urls[:10], output=output)

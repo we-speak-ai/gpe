@@ -1,7 +1,17 @@
 JINA_KEY = "Bearer jina_d4016c178ff54245bb03779bed7de034Lc4V-u_ff22TiVY384eKPIisNl4h"
 
+GROQ_KEY = "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"
+
 LOAD_TIME = 10
 
 SCROLLS = 100
 
 HEADLESS = True
+
+MODELL_SUMMARY = "mixtral-8x7b-32768"
+
+MODELL_HEADLINE = "mixtral-8x7b-32768"
+
+MODELL_META = "llama3-70b-8192"
+
+TRY_OUT = 10
